@@ -6,12 +6,15 @@ import ThemeSelector from './components/ThemeSelector';
 import { windowRegistry } from './components/portfolio-windows';
 import { portfolioData } from './data/portfolioData';
 
-// Local backend URL. This can be overridden using a Vite environment variable.
+// Local backend URL. Override with VITE_API_URL when needed.
 const API_URL =
   import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
 
+// Number of previous conversation messages sent to the backend.
+const MAX_HISTORY_MESSAGES = 8;
+
 export default function App() {
-  // Theme state with localStorage persistence
+  // Theme state with localStorage persistence.
   const [theme, setTheme] = useState(() => {
     try {
       const savedTheme = localStorage.getItem('portfolio-theme');
@@ -22,8 +25,8 @@ export default function App() {
       ) {
         return savedTheme;
       }
-    } catch (e) {
-      // localStorage may be unavailable in restricted environments
+    } catch {
+      // localStorage may be unavailable.
     }
 
     return 'midnight';
@@ -32,20 +35,20 @@ export default function App() {
   useEffect(() => {
     try {
       localStorage.setItem('portfolio-theme', theme);
-    } catch (e) {
-      // Continue even if localStorage is unavailable
+    } catch {
+      // Continue if localStorage is unavailable.
     }
 
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
 
-  // Active portfolio window and selected project
+  // Active portfolio window and selected project.
   const [activeWindow, setActiveWindow] = useState(null);
   const [selectedProject, setSelectedProject] = useState(null);
 
   const windowContainerRef = useRef(null);
 
-  // Conversation history
+  // Conversation history shown in the chat UI.
   const [messages, setMessages] = useState([
     {
       id: 'welcome-1',
@@ -56,12 +59,12 @@ export default function App() {
 
   const [isThinking, setIsThinking] = useState(false);
 
-  // Find the component registered for the active window
+  // Resolve the active portfolio window component.
   const ActiveWindowComponent = activeWindow
     ? windowRegistry[activeWindow]
     : null;
 
-  // Scroll to the portfolio window after it renders
+  // Scroll to the portfolio window after it renders.
   useEffect(() => {
     if (activeWindow && windowContainerRef.current) {
       const scrollTimer = setTimeout(() => {
@@ -76,8 +79,7 @@ export default function App() {
   }, [activeWindow, selectedProject]);
 
   /**
-   * Send the visitor's question to FastAPI.
-   * Groq generates the answer and decides which portfolio window to open.
+   * Send a question and recent conversation history to FastAPI.
    */
   const handleSendMessage = async (userQuestion) => {
     const question =
@@ -87,13 +89,30 @@ export default function App() {
       return;
     }
 
+    // Capture the previous messages before adding the new question.
+    // This avoids including the current question twice in the request.
+    const history = messages
+      .filter(
+        (message) =>
+          message.id !== 'welcome-1' &&
+          (message.sender === 'user' ||
+            message.sender === 'assistant') &&
+          typeof message.text === 'string' &&
+          message.text.trim()
+      )
+      .slice(-MAX_HISTORY_MESSAGES)
+      .map((message) => ({
+        role: message.sender,
+        content: message.text.trim(),
+      }));
+
     const userMsg = {
       id: `user-${Date.now()}`,
       sender: 'user',
       text: question,
     };
 
-    setMessages((prev) => [...prev, userMsg]);
+    setMessages((previous) => [...previous, userMsg]);
     setIsThinking(true);
 
     try {
@@ -104,6 +123,7 @@ export default function App() {
         },
         body: JSON.stringify({
           message: question,
+          history,
         }),
       });
 
@@ -117,7 +137,7 @@ export default function App() {
             errorMessage = errorData.detail;
           }
         } catch {
-          // Keep the default error message
+          // Keep the default error message.
         }
 
         throw new Error(errorMessage);
@@ -125,7 +145,7 @@ export default function App() {
 
       const data = await response.json();
 
-      // Add the actual AI-generated answer to the conversation
+      // Add the AI-generated answer to the conversation.
       const botMsg = {
         id: `assistant-${Date.now()}`,
         sender: 'assistant',
@@ -135,42 +155,61 @@ export default function App() {
             : "I couldn't generate a response. Please try again.",
       };
 
-      setMessages((prev) => [...prev, botMsg]);
+      setMessages((previous) => [...previous, botMsg]);
 
-      // Validate the returned window type against the component registry
+      // Validate the requested window against the actual registry.
       const requestedType =
         typeof data.type === 'string' &&
-        Object.prototype.hasOwnProperty.call(windowRegistry, data.type)
+        Object.prototype.hasOwnProperty.call(
+          windowRegistry,
+          data.type
+        )
           ? data.type
           : null;
 
-      // Resolve the AI's project slug to the existing project data object
+      /*
+       * IMPORTANT:
+       * A null or invalid type means the AI is answering
+       * conversationally. Keep the current window open.
+       */
+      if (!requestedType) {
+        return;
+      }
+
+      // Resolve a project slug for project-detail navigation.
       let project = null;
 
       if (requestedType === 'PROJECT_DETAIL') {
         project = portfolioData.projects.find(
-          (p) => p.slug === data.project || p.id === data.project
+          (item) =>
+            item.slug === data.project ||
+            item.id === data.project
         );
 
-        // If the AI returned an unknown project, show the projects list
+        // Fall back to the projects list for an invalid slug.
         if (!project) {
-          setActiveWindow('PROJECTS');
           setSelectedProject(null);
+          setActiveWindow('PROJECTS');
           return;
         }
       }
 
+      // Change the window only when a valid type was requested.
       setSelectedProject(project);
       setActiveWindow(requestedType);
     } catch (error) {
       console.error('Portfolio chat error:', error);
 
-      setMessages((prev) => [
-        ...prev,
+      setMessages((previous) => [
+        ...previous,
         {
           id: `assistant-error-${Date.now()}`,
           sender: 'assistant',
-          text: 'Sorry, I could not connect to the AI service. Please check that the backend is running and try again.',
+          text:
+            error instanceof Error &&
+            error.message !== 'Failed to fetch'
+              ? error.message
+              : 'Sorry, I could not connect to the AI service. Please check that the backend is running and try again.',
         },
       ]);
     } finally {
@@ -178,13 +217,14 @@ export default function App() {
     }
   };
 
-  // Resolve the selected project object for the project detail window
+  // Resolve the selected project for the project-detail window.
   const activeProjectData =
     typeof selectedProject === 'object' && selectedProject !== null
       ? selectedProject
       : portfolioData.projects.find(
-          (p) =>
-            p.slug === selectedProject || p.id === selectedProject
+          (item) =>
+            item.slug === selectedProject ||
+            item.id === selectedProject
         ) || portfolioData.projects[0];
 
   return (
@@ -232,7 +272,8 @@ export default function App() {
               }}
               onSelectProject={(slug) => {
                 const project = portfolioData.projects.find(
-                  (p) => p.slug === slug || p.id === slug
+                  (item) =>
+                    item.slug === slug || item.id === slug
                 );
 
                 if (project) {

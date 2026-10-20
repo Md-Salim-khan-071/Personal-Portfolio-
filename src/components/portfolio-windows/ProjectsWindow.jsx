@@ -39,75 +39,89 @@ export default function ProjectsWindow({ onClose, onSelectProject }) {
       </div>
 
       {/* Projects Grid */}
+
       <div className="projects-grid">
-        {projects.map((proj) => (
-          <article key={proj.id} className="project-card">
-            <div>
-              <div className="project-card-header">
-                <span className="project-category">{proj.subtitle}</span>
-              </div>
+        {projects.map((proj) => {
+          const slug = proj.slug;
+          const name = proj.name ?? proj.title ?? 'Untitled Project';
+          const description =
+            proj.bullets?.[0] ??
+            proj.description ??
+            proj.features?.[0] ??
+            'Project details coming soon.';
+          const technologies =
+            proj.technologies ?? proj.techStack ?? [];
+          const liveUrl = proj.liveUrl ?? proj.live;
+          const githubUrl = proj.githubUrl ?? proj.github;
 
-              <h3 className="project-name">{proj.name}</h3>
-
-              {/* Primary highlight summary from resume */}
-              <p className="project-desc">{proj.bullets[0]}</p>
-
-              {/* Technologies */}
-              <div className="project-tech-tags">
-                {proj.technologies.map((tech, i) => (
-                  <span key={i} className="tech-tag">
-                    {tech}
+          return (
+            <article key={proj.id ?? slug ?? name} className="project-card">
+              <div>
+                <div className="project-card-header">
+                  <span className="project-category">
+                    {proj.subtitle ?? 'Featured Project'}
                   </span>
-                ))}
-              </div>
-            </div>
+                </div>
 
-            {/* Differentiated Action Buttons */}
-            <div className="project-actions-container">
-              <div className="project-links-row">
-                {proj.liveUrl && (
-                  <a
-                    href={proj.liveUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="btn-live-link"
-                    title={`Open ${proj.name} live deployment`}
-                  >
-                    <span>Live Website</span>
-                    <ExternalLink size={13} />
-                  </a>
-                )}
+                <h3 className="project-name">{name}</h3>
+                <p className="project-desc">{description}</p>
 
-                {proj.githubUrl && (
-                  <a
-                    href={proj.githubUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="btn-github-link"
-                    title={`View ${proj.name} source code on GitHub`}
-                  >
-                    <Github size={13} />
-                    <span>GitHub</span>
-                    <ExternalLink size={12} />
-                  </a>
-                )}
+                <div className="project-tech-tags">
+                  {technologies.map((tech, i) => (
+                    <span key={i} className="tech-tag">
+                      {tech}
+                    </span>
+                  ))}
+                </div>
               </div>
 
-              {onSelectProject && (
-                <button
-                  type="button"
-                  onClick={() => onSelectProject(proj.slug)}
-                  className="btn-details-link"
-                  title={`View detailed architecture of ${proj.name}`}
-                >
-                  <Info size={13} />
-                  <span>View Details</span>
-                </button>
-              )}
-            </div>
-          </article>
-        ))}
+              <div className="project-actions-container">
+                <div className="project-links-row">
+                  {liveUrl && (
+                    <a
+                      href={liveUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="btn-live-link"
+                      title={`Open ${name} live deployment`}
+                    >
+                      <span>Live Website</span>
+                      <ExternalLink size={13} />
+                    </a>
+                  )}
+
+                  {githubUrl && (
+                    <a
+                      href={githubUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="btn-github-link"
+                      title={`View ${name} source code on GitHub`}
+                    >
+                      <Github size={13} />
+                      <span>GitHub</span>
+                      <ExternalLink size={12} />
+                    </a>
+                  )}
+                </div>
+
+                {onSelectProject && slug && (
+                  <button
+                    type="button"
+                    onClick={() => onSelectProject(slug)}
+                    className="btn-details-link"
+                    title={`View detailed architecture of ${name}`}
+                  >
+                    <Info size={13} />
+                    <span>View Details</span>
+                  </button>
+                )}
+              </div>
+            </article>
+          );
+        })}
       </div>
+
     </div>
   );
 }

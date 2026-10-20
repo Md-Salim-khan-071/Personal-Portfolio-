@@ -104,6 +104,56 @@ export const portfolioData = {
       ],
       liveUrl: "https://wish-craft-lemon.vercel.app/",
       githubUrl: "https://github.com/Md-Salim-khan-071/WishCraft"
+    },
+    {
+      "slug": "geospatial-file-measurement-api",
+      "title": "Geospatial File Measurement API",
+      "description": "A REST API built with Python and FastAPI to process geospatial datasets, extract feature geometries and CRS information, calculate polygon areas and LineString lengths, and persist measurement results.",
+      "techStack": [
+        "Python",
+        "FastAPI",
+        "GeoPandas",
+        "Shapely",
+        "PyProj",
+        "SQLite",
+        "SQLAlchemy",
+        "Pytest"
+      ],
+      "features": [
+        "Upload and process KML and zipped Shapefile datasets",
+        "Extract feature geometries, properties, and coordinate reference system information",
+        "Calculate polygon areas in square metres using projected coordinate systems",
+        "Calculate LineString lengths in metres using projected coordinate systems",
+        "Persist file metadata and feature measurement results in SQLite using SQLAlchemy",
+        "Retrieve stored records through API endpoints",
+        "Validate inputs and test API endpoints and measurement logic with Pytest"
+      ],
+      "github": "https://github.com/Md-Salim-khan-071/geospatial-file-measurement-api",
+      "live": null
+    },
+    {
+      "slug": "hashcheck",
+      "title": "HashCheck",
+      "description": "A C# Windows desktop application for file integrity monitoring that detects added, modified, and deleted files using SHA-256 baselines, HMAC-SHA256 verification, Merkle-style hashing, filesystem monitoring, and heuristic-based file analysis.",
+      "techStack": [
+        "C#",
+        "Windows Forms",
+        ".NET Framework",
+        "SHA-256",
+        "HMAC-SHA256"
+      ],
+      "features": [
+        "Monitor file integrity by comparing SHA-256 hashes against saved baselines",
+        "Detect added, modified, and deleted files",
+        "Verify baselines using HMAC-SHA256 and Merkle-style hashing",
+        "Analyze file metadata and entropy to identify potentially suspicious changes",
+        "Monitor filesystem activity in real time",
+        "Inspect text differences to investigate content modifications",
+        "Simulate security scenarios including ransomware-like encryption, code injection, and baseline tampering",
+        "Perform heuristic-based file analysis"
+      ],
+      "github": "https://github.com/Sandeep2530s/HashCheckSentinel.git",
+      "live": null
     }
   ],
 

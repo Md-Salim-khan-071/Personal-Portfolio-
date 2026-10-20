@@ -21,7 +21,7 @@ export default function Hero() {
 
       {/* Main Greeting */}
       <h1 className="hero-title">
-        Hi, I'm <span className="hero-title-accent">Salim</span>.
+        Hi, I'm <span className="hero-title-accent"> Mohammed Salim </span>.
       </h1>
 
       {/* Clean Dual Subtitle */}

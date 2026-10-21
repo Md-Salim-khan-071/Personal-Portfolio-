@@ -17,5 +17,3 @@ backend/portfolio_knowledge.db
 # Local environment
 .DS_Store
 .vscode/
-
-node_modules

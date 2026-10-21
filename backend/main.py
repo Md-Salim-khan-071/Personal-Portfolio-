@@ -50,16 +50,17 @@ ALLOWED_PROJECTS = {
 
 app = FastAPI(title="Salim's Portfolio API")
 
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5173",
         "http://127.0.0.1:5173",
-        "https://personal-portfolio-s767.vercel.app/",
+        "https://personal-portfolio-s767.vercel.app",
     ],
     allow_credentials=False,
-    allow_methods=["GET", "POST"],
-    allow_headers=["Content-Type"],
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 

@@ -209,7 +209,7 @@ def health():
         ),
         "retriever_ready": retriever is not None,
         "indexed_chunks": (
-            retriever.collection.count()
+            retriever.collection_count
             if retriever is not None
             else 0
         ),

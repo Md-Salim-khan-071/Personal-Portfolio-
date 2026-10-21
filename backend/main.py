@@ -287,7 +287,8 @@ def get_relevant_context(
     for index, item in enumerate(results, start=1):
         source = item.get("source", "unknown")
         chunk_index = item.get("chunk_index", "unknown")
-        rerank_score = item.get("rerank_score")
+        semantic_score = item.get("semantic_score", 0.0)
+        keyword_bonus = item.get("keyword_bonus", 0.0)
         content = item.get("text", "").strip()
 
         if not content:
@@ -297,7 +298,8 @@ def get_relevant_context(
             f"[Passage {index}]\n"
             f"Source: {source}\n"
             f"Chunk: {chunk_index}\n"
-            f"Cross-encoder relevance score: {rerank_score}\n"
+            f"Semantic score: {semantic_score:.4f}\n"
+            f"Keyword bonus: {keyword_bonus:.4f}\n"
             f"Content:\n{content}"
         )
 

@@ -1,8 +1,7 @@
-
 from pathlib import Path
 
 import chromadb
-from sentence_transformers import CrossEncoder, SentenceTransformer
+from sentence_transformers import SentenceTransformer
 
 
 # --------------------------------------------------
@@ -14,7 +13,6 @@ CHROMA_DIR = BACKEND_DIR / "chroma_db"
 
 COLLECTION_NAME = "portfolio_knowledge"
 EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
-RERANKING_MODEL = "cross-encoder/ms-marco-MiniLM-L-6-v2"
 
 DEFAULT_TOP_K = 3
 CANDIDATE_MULTIPLIER = 5
@@ -46,7 +44,7 @@ TOPIC_TERMS = {
 
 
 def tokenize(text: str) -> set[str]:
-    """Convert text to a simple set of lowercase word tokens."""
+    """Convert text into lowercase word tokens."""
     return {
         word.strip(".,!?():;[]{}'\"").lower()
         for word in text.split()
@@ -60,9 +58,8 @@ def tokenize(text: str) -> set[str]:
 
 class PortfolioRetriever:
     """
-    Retrieve candidate passages using embeddings, then rank
-    them using a cross-encoder that evaluates the question
-    and each passage together.
+    Retrieve portfolio passages using semantic embeddings,
+    then rank them using semantic similarity and keyword overlap.
     """
 
     def __init__(self):
@@ -75,9 +72,7 @@ class PortfolioRetriever:
         print("Loading embedding model...")
         self.model = SentenceTransformer(EMBEDDING_MODEL)
 
-        print("Loading reranking model...")
-        self.reranker = CrossEncoder(RERANKING_MODEL)
-
+        print("Connecting to ChromaDB...")
         self.client = chromadb.PersistentClient(
             path=str(CHROMA_DIR)
         )
@@ -86,7 +81,9 @@ class PortfolioRetriever:
             name=COLLECTION_NAME
         )
 
-        if self.collection.count() == 0:
+        chunk_count = self.collection.count()
+
+        if chunk_count == 0:
             raise ValueError(
                 "The portfolio knowledge collection is empty. "
                 "Run ingest.py first."
@@ -94,7 +91,7 @@ class PortfolioRetriever:
 
         print(
             "Portfolio retriever ready. "
-            f"Indexed chunks: {self.collection.count()}"
+            f"Indexed chunks: {chunk_count}"
         )
 
     @staticmethod
@@ -102,7 +99,7 @@ class PortfolioRetriever:
         query_tokens: set[str],
         document_tokens: set[str],
     ) -> float:
-        """Calculate a small keyword-overlap hint."""
+        """Calculate a small keyword-overlap relevance bonus."""
         bonus = 0.0
 
         for terms in TOPIC_TERMS.values():
@@ -125,13 +122,10 @@ class PortfolioRetriever:
         candidate_multiplier: int = CANDIDATE_MULTIPLIER,
     ) -> list[dict]:
         """
-        1. Retrieve candidates from ChromaDB.
-        2. Calculate semantic and keyword scores for inspection.
-        3. Rerank candidates with a cross-encoder.
-        4. Return the best top_k passages.
-
-        Lower ChromaDB distance means a closer embedding match.
-        Higher reranker scores indicate stronger relevance.
+        1. Embed the visitor's query.
+        2. Retrieve candidate passages from ChromaDB.
+        3. Calculate semantic similarity and keyword bonus.
+        4. Rank candidates and return the best top_k passages.
         """
 
         query = query.strip()
@@ -152,13 +146,13 @@ class PortfolioRetriever:
         if total_chunks == 0:
             return []
 
-        # Step A: Embed the visitor's query.
+        # Step A: Embed the query.
         query_embedding = self.model.encode(
             [query],
             normalize_embeddings=True,
         )[0]
 
-        # Retrieve more candidates than we intend to return.
+        # Step B: Retrieve more candidates than we need.
         candidate_count = min(
             top_k * candidate_multiplier,
             total_chunks,
@@ -181,12 +175,16 @@ class PortfolioRetriever:
         query_tokens = tokenize(query)
         matches = []
 
-        # Step B: Build candidate records.
+        # Step C: Calculate scores for each candidate.
         for document, metadata, distance in zip(
             documents, metadatas, distances
         ):
             metadata = metadata or {}
+
             semantic_distance = float(distance)
+
+            # ChromaDB returns cosine distance for this collection.
+            # Smaller distance means a closer semantic match.
             semantic_score = 1.0 - semantic_distance
 
             keyword_bonus = self._topic_bonus(
@@ -204,28 +202,18 @@ class PortfolioRetriever:
                     "distance": semantic_distance,
                     "semantic_score": semantic_score,
                     "keyword_bonus": keyword_bonus,
-                    "final_score": semantic_score + keyword_bonus,
+                    "final_score": (
+                        semantic_score + keyword_bonus
+                    ),
                 }
             )
 
         if not matches:
             return []
 
-        # Step C: Rerank each candidate against the original query.
-        pairs = [
-            (query, match["text"])
-            for match in matches
-        ]
-
-        reranker_scores = self.reranker.predict(pairs)
-
-        for match, score in zip(matches, reranker_scores):
-            match["rerank_score"] = float(score)
-
-        # The cross-encoder is the primary ranking signal.
-        # The other scores remain available for debugging.
+        # Step D: Rank using semantic similarity and keyword overlap.
         matches.sort(
-            key=lambda item: item["rerank_score"],
+            key=lambda item: item["final_score"],
             reverse=True,
         )
 
@@ -250,15 +238,18 @@ if __name__ == "__main__":
 
         try:
             matches = retriever.search(question, top_k=3)
+
         except Exception as exc:
-            print(f"Search failed: {type(exc).__name__}: {exc}")
+            print(
+                f"Search failed: {type(exc).__name__}: {exc}"
+            )
             continue
 
         if not matches:
             print("No matching passages found.")
             continue
 
-        print("\nReranked passages:\n")
+        print("\nRetrieved passages:\n")
 
         for index, match in enumerate(matches, start=1):
             print(f"--- Match {index} ---")
@@ -274,12 +265,8 @@ if __name__ == "__main__":
                 f"{match['keyword_bonus']:.4f}"
             )
             print(
-                f"Original combined score: "
+                f"Final ranking score: "
                 f"{match['final_score']:.4f}"
-            )
-            print(
-                f"Cross-encoder score: "
-                f"{match['rerank_score']:.4f}"
             )
             print(match["text"])
             print()

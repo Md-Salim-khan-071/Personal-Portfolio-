@@ -7,8 +7,12 @@ import { windowRegistry } from './components/portfolio-windows';
 import { portfolioData } from './data/portfolioData';
 
 // Local backend URL. Override with VITE_API_URL when needed.
-const API_URL =
-  import.meta.env.VITE_API_URL || 'https://personal-portfolio-k2d9.onrender.com';
+
+const API_URL = (
+  import.meta.env.VITE_API_URL ||
+  'https://personal-portfolio-k2d9.onrender.com'
+).replace(/\/+$/, '');
+
 
 // Number of previous conversation messages sent to the backend.
 const MAX_HISTORY_MESSAGES = 8;

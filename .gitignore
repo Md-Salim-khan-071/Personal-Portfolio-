@@ -12,9 +12,8 @@ __pycache__/
 # Generated files
 dist/
 backend/chroma_db/
+backend/portfolio_knowledge.db
 
 # Local environment
 .DS_Store
 .vscode/
-
-knowledge_base/

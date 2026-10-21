@@ -8,7 +8,7 @@ import { portfolioData } from './data/portfolioData';
 
 // Local backend URL. Override with VITE_API_URL when needed.
 const API_URL =
-  import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+  import.meta.env.VITE_API_URL || 'https://personal-portfolio-k2d9.onrender.com';
 
 // Number of previous conversation messages sent to the backend.
 const MAX_HISTORY_MESSAGES = 8;

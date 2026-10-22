@@ -2985,3 +2985,113 @@ body {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ==========================================
+   FULL-BLEED PORTFOLIO BACKGROUND — FIXED
+   ========================================== */
+
+.app-container {
+  position: relative;
+  isolation: isolate;
+  min-height: 100vh;
+  overflow: clip;
+  background: #161818;
+}
+
+/* Keep the profile and assistant above the background */
+.main-content,
+.hero-chat-layout,
+.hero-section,
+.chat-section,
+.portfolio-controls {
+  position: relative;
+}
+
+.main-content,
+.hero-chat-layout,
+.hero-section,
+.chat-section {
+  z-index: 1;
+}
+
+/* Full-screen photo layer */
+.app-container::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+
+  background-image: var(--portfolio-image);
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+
+  filter: brightness(0.42) blur(2px);
+  transform: scale(1.01);
+}
+
+/* Gradient darkens the right side smoothly */
+.app-container::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+
+  background:
+    linear-gradient(
+      to right,
+      rgba(22, 24, 24, 0.08) 0%,
+      rgba(22, 24, 24, 0.12) 32%,
+      rgba(22, 24, 24, 0.42) 48%,
+      rgba(22, 24, 24, 0.82) 65%,
+      rgba(22, 24, 24, 0.97) 82%,
+      #161818 100%
+    ),
+    linear-gradient(
+      to bottom,
+      rgba(22, 24, 24, 0.16) 0%,
+      transparent 45%,
+      rgba(22, 24, 24, 0.68) 100%
+    );
+}
+
+/* Remove background layers from the Hero itself */
+.hero-section::before,
+.hero-section::after {
+  content: none !important;
+}
+
+/* Mobile gradient */
+@media (max-width: 768px) {
+  .app-container::after {
+    background: linear-gradient(
+      to bottom,
+      rgba(22, 24, 24, 0.25) 0%,
+      rgba(22, 24, 24, 0.48) 50%,
+      #161818 100%
+    );
+  }
+}
+
+/* Fix: pass the Hero image URL to the full-page background */
+.app-container {
+  --portfolio-image: none;
+}
+
+.app-container::before {
+  background-image: var(--portfolio-image);
+}
+
+/* Keep the background behind all page content */
+.app-container {
+  position: relative;
+  isolation: isolate;
+}
+
+.app-container::before,
+.app-container::after {
+  z-index: -1;
+  pointer-events: none;
+}

@@ -1,13 +1,40 @@
-
 import React from 'react';
-import { Github, Linkedin, FileText, Code2, ArrowDownRight } from 'lucide-react';
+import {
+  Github,
+  Linkedin,
+  FileText,
+  Code2,
+  ArrowDownRight,
+} from 'lucide-react';
 import { portfolioData } from '../data/portfolioData';
+
+const portfolioImages = import.meta.glob(
+  '../portfolio_image.{jpg,png,jpeg}',
+  {
+    eager: true,
+    query: '?url',
+    import: 'default',
+  }
+);
+
+const portfolioImage =
+  portfolioImages['../portfolio_image.jpg'] ||
+  portfolioImages['../portfolio_image.png'];
 
 export default function Hero() {
   const { profile } = portfolioData;
 
   return (
-    <section className="hero-section" aria-label="Introduction">
+    <section
+      className="hero-section"
+      aria-label="Introduction"
+      style={{
+        '--portfolio-image': portfolioImage
+          ? `url("${portfolioImage}")`
+          : 'none',
+      }}
+    >
+      {/* Profile initials */}
       <div className="hero-avatar-wrapper">
         <div
           className="hero-avatar"
@@ -18,28 +45,55 @@ export default function Hero() {
         </div>
       </div>
 
+      {/* Professional label */}
       <div className="hero-intro-label">
-        <span className="hero-status-dot" aria-hidden="true" />
+        <span
+          className="hero-status-dot"
+          aria-hidden="true"
+        />
         <span>COMPUTER SCIENCE ENGINEER</span>
       </div>
 
+      {/* Main heading */}
       <h1 className="hero-title">
-        Hi, I'm <span className="hero-title-accent">Mohammed Salim</span>.
+        Hi, I'm{' '}
+        <span className="hero-title-accent">
+          Mohammed Salim
+        </span>
+        .
       </h1>
 
+      {/* Professional roles */}
       <div className="hero-roles-wrap">
-        <span className="hero-role-primary">Full-Stack Developer</span>
-        <span className="hero-role-divider" aria-hidden="true">/</span>
-        <span className="hero-role-secondary">AI Enthusiast</span>
+        <span className="hero-role-primary">
+          Full-Stack Developer
+        </span>
+
+        <span
+          className="hero-role-divider"
+          aria-hidden="true"
+        >
+          /
+        </span>
+
+        <span className="hero-role-secondary">
+          AI Enthusiast
+        </span>
       </div>
 
+      {/* Introduction */}
       <p className="hero-description">
-        I build practical software solutions, explore backend architecture,
-        and develop AI-powered applications. Explore my work, or ask my
-        portfolio assistant about my projects, skills, and experience.
+        I build practical software solutions, explore backend
+        architecture, and develop AI-powered applications.
+        Explore my work, or ask my portfolio assistant about
+        my projects, skills, and experience.
       </p>
 
-      <nav className="hero-actions" aria-label="Professional profiles and resume">
+      {/* Social links and resume */}
+      <nav
+        className="hero-actions"
+        aria-label="Professional profiles and resume"
+      >
         <a
           href={profile.github}
           target="_blank"
@@ -86,7 +140,10 @@ export default function Hero() {
         >
           <FileText size={16} aria-hidden="true" />
           <span>Resume</span>
-          <ArrowDownRight size={14} aria-hidden="true" />
+          <ArrowDownRight
+            size={14}
+            aria-hidden="true"
+          />
         </a>
       </nav>
     </section>

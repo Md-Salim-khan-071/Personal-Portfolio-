@@ -1,52 +1,54 @@
+
 import React from 'react';
-import { Github, Linkedin, FileText, Code2 } from 'lucide-react';
+import { Github, Linkedin, FileText, Code2, ArrowDownRight } from 'lucide-react';
 import { portfolioData } from '../data/portfolioData';
 
-/**
- * Hero Component
- * 
- * Minimal, modern, and uncluttered presentation of Salim.
- */
 export default function Hero() {
   const { profile } = portfolioData;
 
   return (
     <section className="hero-section" aria-label="Introduction">
-      {/* Avatar Badge */}
       <div className="hero-avatar-wrapper">
-        <div className="hero-avatar" aria-label="Mohammed Salim Usman Khan">
+        <div
+          className="hero-avatar"
+          role="img"
+          aria-label="Initials SK"
+        >
           <span>SK</span>
         </div>
       </div>
 
-      {/* Main Greeting */}
-      <h1 className="hero-title">
-        Hi, I'm <span className="hero-title-accent"> Mohammed Salim </span>.
-      </h1>
-
-      {/* Clean Dual Subtitle */}
-      <div className="hero-roles-wrap">
-        <span className="hero-role-primary">Computer Science Engineer</span>
-        <span className="hero-role-divider">•</span>
-        <span className="hero-role-secondary">Developer & AI Enthusiast</span>
+      <div className="hero-intro-label">
+        <span className="hero-status-dot" aria-hidden="true" />
+        <span>COMPUTER SCIENCE ENGINEER</span>
       </div>
 
-      {/* Short 1-2 line intro */}
+      <h1 className="hero-title">
+        Hi, I'm <span className="hero-title-accent">Mohammed Salim</span>.
+      </h1>
+
+      <div className="hero-roles-wrap">
+        <span className="hero-role-primary">Full-Stack Developer</span>
+        <span className="hero-role-divider" aria-hidden="true">/</span>
+        <span className="hero-role-secondary">AI Enthusiast</span>
+      </div>
+
       <p className="hero-description">
-        Building practical full-stack systems and exploring backend architecture and AI development.
-        Ask my portfolio assistant below to explore my projects, skills, or education.
+        I build practical software solutions, explore backend architecture,
+        and develop AI-powered applications. Explore my work, or ask my
+        portfolio assistant about my projects, skills, and experience.
       </p>
 
-      {/* Social / External Action Buttons */}
-      <div className="hero-actions">
+      <nav className="hero-actions" aria-label="Professional profiles and resume">
         <a
           href={profile.github}
           target="_blank"
           rel="noopener noreferrer"
           className="action-btn"
-          title="Visit Salim's GitHub profile"
+          title="Visit GitHub profile"
+          aria-label="GitHub profile (opens in a new tab)"
         >
-          <Github size={15} />
+          <Github size={16} aria-hidden="true" />
           <span>GitHub</span>
         </a>
 
@@ -55,9 +57,10 @@ export default function Hero() {
           target="_blank"
           rel="noopener noreferrer"
           className="action-btn"
-          title="Visit Salim's LinkedIn profile"
+          title="Visit LinkedIn profile"
+          aria-label="LinkedIn profile (opens in a new tab)"
         >
-          <Linkedin size={15} />
+          <Linkedin size={16} aria-hidden="true" />
           <span>LinkedIn</span>
         </a>
 
@@ -66,9 +69,10 @@ export default function Hero() {
           target="_blank"
           rel="noopener noreferrer"
           className="action-btn"
-          title="Visit Salim's LeetCode profile"
+          title="Visit LeetCode profile"
+          aria-label="LeetCode profile (opens in a new tab)"
         >
-          <Code2 size={15} />
+          <Code2 size={16} aria-hidden="true" />
           <span>LeetCode</span>
         </a>
 
@@ -77,12 +81,14 @@ export default function Hero() {
           target="_blank"
           rel="noopener noreferrer"
           className="action-btn primary"
-          title="View Salim's Resume PDF"
+          title="View resume PDF"
+          aria-label="View resume (opens in a new tab)"
         >
-          <FileText size={15} />
+          <FileText size={16} aria-hidden="true" />
           <span>Resume</span>
+          <ArrowDownRight size={14} aria-hidden="true" />
         </a>
-      </div>
+      </nav>
     </section>
   );
 }

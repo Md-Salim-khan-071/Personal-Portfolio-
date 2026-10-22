@@ -6,13 +6,11 @@ import ThemeSelector from './components/ThemeSelector';
 import { windowRegistry } from './components/portfolio-windows';
 import { portfolioData } from './data/portfolioData';
 
-// Local backend URL. Override with VITE_API_URL when needed.
-
+// Backend URL. VITE_API_URL can override this in your environment.
 const API_URL = (
   import.meta.env.VITE_API_URL ||
   'https://personal-portfolio-k2d9.onrender.com'
 ).replace(/\/+$/, '');
-
 
 // Number of previous conversation messages sent to the backend.
 const MAX_HISTORY_MESSAGES = 8;
@@ -50,6 +48,8 @@ export default function App() {
   const [activeWindow, setActiveWindow] = useState(null);
   const [selectedProject, setSelectedProject] = useState(null);
 
+  // References for scrolling between the assistant and detail content.
+  const heroChatRef = useRef(null);
   const windowContainerRef = useRef(null);
 
   // Conversation history shown in the chat UI.
@@ -57,7 +57,8 @@ export default function App() {
     {
       id: 'welcome-1',
       sender: 'assistant',
-      text: "Hi! I'm Salim's portfolio AI. Ask me anything about his projects (Mini ERP CRM, FocusFlow, WishCraft), education, technical skills, or resume.",
+      text:
+        "Hi! I'm Salim's portfolio AI. Ask me about his projects, education, technical skills, experience, or resume.",
     },
   ]);
 
@@ -68,22 +69,26 @@ export default function App() {
     ? windowRegistry[activeWindow]
     : null;
 
-  // Scroll to the portfolio window after it renders.
+  // Automatically scroll to detail content after it renders.
   useEffect(() => {
-    if (activeWindow && windowContainerRef.current) {
-      const scrollTimer = setTimeout(() => {
-        windowContainerRef.current?.scrollIntoView({
-          behavior: 'smooth',
-          block: 'start',
-        });
-      }, 80);
-
-      return () => clearTimeout(scrollTimer);
+    if (!activeWindow || !windowContainerRef.current) {
+      return;
     }
+
+    const scrollTimer = setTimeout(() => {
+      windowContainerRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+    }, 100);
+
+    return () => clearTimeout(scrollTimer);
   }, [activeWindow, selectedProject]);
 
   /**
    * Send a question and recent conversation history to FastAPI.
+   * Conversational answers stay in the chat.
+   * Valid portfolio window types open their corresponding detail view.
    */
   const handleSendMessage = async (userQuestion) => {
     const question =
@@ -93,8 +98,7 @@ export default function App() {
       return;
     }
 
-    // Capture the previous messages before adding the new question.
-    // This avoids including the current question twice in the request.
+    // Capture previous messages before adding the current question.
     const history = messages
       .filter(
         (message) =>
@@ -132,7 +136,8 @@ export default function App() {
       });
 
       if (!response.ok) {
-        let errorMessage = 'The AI service could not process your request.';
+        let errorMessage =
+          'The AI service could not process your request.';
 
         try {
           const errorData = await response.json();
@@ -149,7 +154,7 @@ export default function App() {
 
       const data = await response.json();
 
-      // Add the AI-generated answer to the conversation.
+      // Add the AI answer to the conversation.
       const botMsg = {
         id: `assistant-${Date.now()}`,
         sender: 'assistant',
@@ -171,16 +176,13 @@ export default function App() {
           ? data.type
           : null;
 
-      /*
-       * IMPORTANT:
-       * A null or invalid type means the AI is answering
-       * conversationally. Keep the current window open.
-       */
+      // No valid window type means this is a conversational answer.
+      // Keep the answer in the chat without opening another panel.
       if (!requestedType) {
         return;
       }
 
-      // Resolve a project slug for project-detail navigation.
+      // Resolve the project for project-detail navigation.
       let project = null;
 
       if (requestedType === 'PROJECT_DETAIL') {
@@ -190,7 +192,7 @@ export default function App() {
             item.id === data.project
         );
 
-        // Fall back to the projects list for an invalid slug.
+        // If the project identifier is invalid, show the projects list.
         if (!project) {
           setSelectedProject(null);
           setActiveWindow('PROJECTS');
@@ -198,7 +200,7 @@ export default function App() {
         }
       }
 
-      // Change the window only when a valid type was requested.
+      // Open the requested portfolio window.
       setSelectedProject(project);
       setActiveWindow(requestedType);
     } catch (error) {
@@ -213,7 +215,7 @@ export default function App() {
             error instanceof Error &&
             error.message !== 'Failed to fetch'
               ? error.message
-              : 'Sorry, I could not connect to the AI service. Please check that the backend is running and try again.',
+              : 'Sorry, I could not connect to the AI service. Please check the connection and try again.',
         },
       ]);
     } finally {
@@ -221,7 +223,7 @@ export default function App() {
     }
   };
 
-  // Resolve the selected project for the project-detail window.
+  // Resolve the selected project for the detail window.
   const activeProjectData =
     typeof selectedProject === 'object' && selectedProject !== null
       ? selectedProject
@@ -231,77 +233,80 @@ export default function App() {
             item.id === selectedProject
         ) || portfolioData.projects[0];
 
+  // Close detail content and return to the main assistant.
+  const handleCloseWindow = () => {
+    setActiveWindow(null);
+    setSelectedProject(null);
+
+    requestAnimationFrame(() => {
+      heroChatRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+    });
+  };
+
+  // Navigate from a project list to a specific project.
+  const handleSelectProject = (slug) => {
+    const project = portfolioData.projects.find(
+      (item) => item.slug === slug || item.id === slug
+    );
+
+    if (!project) {
+      return;
+    }
+
+    setSelectedProject(project);
+    setActiveWindow('PROJECT_DETAIL');
+  };
+
+  // Return from a project detail view to the project list.
+  const handleBackToProjects = () => {
+    setSelectedProject(null);
+    setActiveWindow('PROJECTS');
+  };
+
   return (
     <div className="app-container" data-theme={theme}>
-      {/* Top navigation */}
-      <header className="top-nav">
-        <div className="top-nav-left">
-          <div className="brand-badge">
-            <span className="brand-dot"></span>
-            <span>salim.dev</span>
-          </div>
-
-          <div className="status-indicator">
-            <span className="status-dot"></span>
-            <span>Open to opportunities</span>
-          </div>
-        </div>
-
+      {/* Discreet theme controls; no navigation bar or footer. */}
+      <div className="portfolio-controls">
         <ThemeSelector
           currentTheme={theme}
           onSelectTheme={setTheme}
         />
-      </header>
+      </div>
 
-      {/* Hero, chat, and dynamic portfolio window */}
       <main className="main-content">
-        <Hero />
+        {/* Main screen: introduction on the left, assistant on the right. */}
+        <div
+          className="hero-chat-layout"
+          ref={heroChatRef}
+        >
+          <Hero />
 
-        <ChatSection
-          messages={messages}
-          onSendMessage={handleSendMessage}
-          isThinking={isThinking}
-        />
+          <ChatSection
+            messages={messages}
+            onSendMessage={handleSendMessage}
+            isThinking={isThinking}
+          />
+        </div>
 
+        {/* Only render a detail panel when the AI requests a valid window. */}
         {ActiveWindowComponent && (
           <div
-            key={activeWindow + (selectedProject?.slug || '')}
+            key={`${activeWindow}-${activeProjectData?.slug || ''}`}
             ref={windowContainerRef}
             className="dynamic-window-container"
           >
             <ActiveWindowComponent
-              onClose={() => {
-                setActiveWindow(null);
-                setSelectedProject(null);
-              }}
-              onSelectProject={(slug) => {
-                const project = portfolioData.projects.find(
-                  (item) =>
-                    item.slug === slug || item.id === slug
-                );
-
-                if (project) {
-                  setSelectedProject(project);
-                  setActiveWindow('PROJECT_DETAIL');
-                }
-              }}
+              onClose={handleCloseWindow}
+              onSelectProject={handleSelectProject}
               project={activeProjectData}
-              onBackToProjects={() => {
-                setSelectedProject(null);
-                setActiveWindow('PROJECTS');
-              }}
+              onBackToProjects={handleBackToProjects}
             />
           </div>
         )}
       </main>
-
-      {/* Footer */}
-      <footer className="portfolio-footer">
-        <p>
-          © {new Date().getFullYear()} Mohammed Salim Usman Khan
-          {' • '}Source of truth: Latest Resume
-        </p>
-      </footer>
     </div>
   );
 }
